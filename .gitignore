@@ -1,0 +1,36 @@
+<BS># Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, build artifacts
+*.test
+/build
+/bin
+/vendor
+
+# Output of the go coverage tool, can be stored in different places
+/coverage.out
+/coverage.html
+
+# Dependency directories (Go modules)
+vendor/
+
+# IDE settings and local environment files
+.idea/
+.vscode/
+*.swp
+*~
+.env
+.envrc
+
+# OS-generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
