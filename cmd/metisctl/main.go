@@ -1,8 +1,10 @@
 package main
 
-import "fmt"
+import (
+    "github.com/shreyasganesh0/project-metis/cmd/metisctl/cmd"
+)
 
 func main() {
 
-    fmt.Println("Project Metis CLI (metisctl) starting...");
+    cmd.Execute();
 }
