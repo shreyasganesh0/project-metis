@@ -10,7 +10,7 @@ import (
     "github.com/spf13/cobra"
 )
 
-var root_cmd = &cobra.Command {
+var rootCmd = &cobra.Command {
     Use: "metisctl",
     Short: "A CLI for the Metis Internal Development Platform.",
     Long: `The Metis CLI is intended to be an Internal Development Platform tool.
@@ -44,7 +44,7 @@ var root_cmd = &cobra.Command {
 
 func Execute() {
 
-    if err := root_cmd.Execute(); err != nil {
+    if err := rootCmd.Execute(); err != nil {
 
         os.Exit(1);
     }

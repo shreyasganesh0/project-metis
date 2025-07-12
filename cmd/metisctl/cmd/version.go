@@ -5,6 +5,12 @@ import (
     "github.com/spf13/cobra"
 )
 
+var (
+    version = "dev"
+    commit = "none"
+    date = "unkown"
+)
+
 var versionCmd = &cobra.Command {
 
     Use: "version",
@@ -13,7 +19,8 @@ var versionCmd = &cobra.Command {
             It provides details of version number, commit hash and build date.`,
     RunE: func(cmd *cobra.Command, args []string) error{
 
-        fmt.Println("metisctl version: dev");
+        fmt.Printf("Metisctl Version: %s\nGit Commit: %s\nBuild Date: %s\n",
+                    version, commit, date);
         return nil;
     },
 }
