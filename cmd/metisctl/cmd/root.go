@@ -7,7 +7,9 @@ import (
     "context"
     "syscall"
     "os/signal"
+    "path/filepath"
     "github.com/spf13/cobra"
+    "github.com/spf13/viper"
 )
 
 var rootCmd = &cobra.Command {
@@ -40,6 +42,25 @@ var rootCmd = &cobra.Command {
 
         return nil;
     },
+
+    PersistentPreRun: func(cmd *cobra.Command, args []string) {
+
+        home_dir, err := os.UserHomeDir();
+        if err != nil {
+
+            panic(fmt.Errorf("Error while getting home directory: %w", err));
+        }
+
+        viper.AddConfigPath(filepath.Join(home_dir, ".metis"))
+        viper.SetConfigName("config")
+        viper.SetConfigType("yaml")
+
+        if err_read := viper.ReadInConfig(); err_read != nil {
+
+            panic(fmt.Errorf("Error while reading config file: %w", err_read));
+        }
+        fmt.Println("Using config file: ", viper.ConfigFileUsed());
+    },
 }
 
 func Execute() {
@@ -48,6 +69,7 @@ func Execute() {
 
         os.Exit(1);
     }
+
 }
 
 
