@@ -23,6 +23,10 @@
 
 - Working with Enviornment variables
     - enable out of the box 12 factor applications
+    - resolve in the order
+        - ENV varialbes
+        - configuration file if set
+        - default values if set
     - ENV varialbles are case sensitive
 
     - SetEnvPrefix(string)

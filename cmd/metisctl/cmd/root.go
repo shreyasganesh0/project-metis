@@ -54,6 +54,8 @@ var rootCmd = &cobra.Command {
         viper.AddConfigPath(filepath.Join(home_dir, ".metis"))
         viper.SetConfigName("config")
         viper.SetConfigType("yaml")
+        viper.SetEnvPrefix("METIS")
+        viper.AutomaticEnv()
 
         if err_read := viper.ReadInConfig(); err_read != nil {
 
