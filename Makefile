@@ -22,3 +22,7 @@ build:
 run: build
 	@echo "Running binary..."
 	@./$(BINARY_PATH)
+
+clean:
+	@echo "Removing binaries..."
+	@rm bin/*

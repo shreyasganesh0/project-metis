@@ -55,13 +55,16 @@ var rootCmd = &cobra.Command {
         viper.SetConfigName("config")
         viper.SetConfigType("yaml")
         viper.SetEnvPrefix("METIS")
-        viper.AutomaticEnv()
+        //viper.AutomaticEnv() doesnt work reliably for nested keys like user.name need to explicitlly bind
+        if err_bind := viper.BindEnv("user.name", "METIS_USER_NAME"); err_bind != nil {
+            fmt.Printf("Failed to bind key %w", err);
+        }
 
         if err_read := viper.ReadInConfig(); err_read != nil {
 
             panic(fmt.Errorf("Error while reading config file: %w", err_read));
         }
-        fmt.Println("Using config file: ", viper.ConfigFileUsed());
+        fmt.Println("Using config file:", viper.ConfigFileUsed());
     },
 }
 
@@ -73,9 +76,3 @@ func Execute() {
     }
 
 }
-
-
-
-
-
-
