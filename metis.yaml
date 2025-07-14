@@ -1,0 +1,7 @@
+---
+apiVersion: "metis.io/v1alpha1"
+kind: "Service"
+name: "user-api"
+language: "go"
+port: 8080
+...
