@@ -4,7 +4,7 @@ import (
     "gopkg.in/yaml.v3"
 )
 
-type MetisManifest struct {
+type MetisServicManifest struct {
 
     ApiVersion string `yaml:"apiVersion"`
     Kind string `yaml:"king"`
