@@ -6,6 +6,7 @@ import (
     "gopkg.in/yaml.v3"
     "github.com/spf13/cobra"
     "github.com/shreyasganesh0/project-metis/pkg/metis"
+    "github.com/shreyasganesh0/project-metis/internal/kubernetes"
 )
 
 var deployCmd = &cobra.Command {
@@ -15,6 +16,13 @@ var deployCmd = &cobra.Command {
     Long: `Looks for the manifest yaml "metis.yaml", parses
            it and deploys the service as specified`,
     RunE: func(cmd *cobra.Command, args []string) error {
+
+        _, err := kubernetes.NewClient()
+        if err != nil {
+
+            return fmt.Errorf("Failed to setup k8s cluster: %w\n", err);
+        }
+        fmt.Println("Successfully connected to kubernetes cluster.")
 
         manifest_bytes, err := os.ReadFile("metis.yaml") //should be fine, the file isnt huge
         if err != nil {

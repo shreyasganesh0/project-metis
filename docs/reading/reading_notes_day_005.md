@@ -43,4 +43,12 @@
     - sets proxy which is passed to everything in kind nodes
 - kind export logs
 
+## Client-Go library
+- rest.InClusterConfig()
+    - creates the in-cluster config
+- kubernetes.NewForConfig(config)
+    - creates a client list for the given config
+- clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions())
+    - get all pods from the namespace
+
 
