@@ -30,15 +30,42 @@ var deployCmd = &cobra.Command {
             return fmt.Errorf("Couldnt read manifest file:%w",err);
         }
 
-        var service metis.ServiceManifest
+        var metis_service metis.ServiceManifest
+        fmt.Println("--> Unmarshalling Metis Service Manifest..\n");
 
-        if err := yaml.Unmarshal(manifest_bytes, &service); err != nil {
+        if err := yaml.Unmarshal(manifest_bytes, &metis_service); err != nil {
 
             return fmt.Errorf("Error unmarshalling file: %w", err);
         }
+        fmt.Println("--> Metis Service Manifest unmarshalled");
+        fmt.Printf("Metis Service name: %s\n\n", metis_service.Name);
 
-        fmt.Printf("--> Parsed service name: %s\n", service.Name)
-        fmt.Printf("Port: %d, Language used: %s\n", service.Port, service.Language)
+        fmt.Println("--> Generating K8s Deployment\n");
+
+        deployment := kubernetes.GenerateDeployment(&metis_service)
+        dep_byts, err_dep := yaml.Marshal(deployment)
+        if err_dep != nil {
+
+            return fmt.Errorf("Error converting deployment to YAML: %w\n", err_dep);
+        }
+
+        fmt.Println("Deployment Generated\n");
+        fmt.Println("--> Generating K8s Service\n");
+
+        service := kubernetes.GenerateService(&metis_service)
+        serv_byts, err_serv := yaml.Marshal(service)
+        if err_serv != nil {
+
+            return fmt.Errorf("Error converting service to YAML: %w\n", err_serv);
+        }
+        fmt.Println("Service Generated\n");
+
+        fmt.Println("---")
+        fmt.Println(string(dep_byts));
+        fmt.Println("...")
+        fmt.Println("---")
+        fmt.Println(string(serv_byts));
+        fmt.Println("...")
 
         return nil;
     },
