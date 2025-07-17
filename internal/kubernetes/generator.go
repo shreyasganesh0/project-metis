@@ -2,6 +2,7 @@ package kubernetes
 
 import (
     "github.com/shreyasganesh0/project-metis/pkg/metis"
+    "k8s.io/apimachinery/pkg/util/intstr"
     appsv1 "k8s.io/api/apps/v1"
     corev1 "k8s.io/api/core/v1"
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -78,5 +79,41 @@ func GenerateDeployment(service *metis.ServiceManifest) (*appsv1.Deployment) {
         },
 
         //Status: appsv1.DeploymentStatus{},//optional
+    }
+}
+
+
+func GenerateService(service *metis.ServiceManifest) (*corev1.Service) {
+
+    labels := map[string]string {
+
+        "app": service.Name,
+    }
+
+    return &corev1.Service{
+
+        ObjectMeta: metav1.ObjectMeta{
+
+            Name: service.Name,
+            Labels: labels,
+            Namespace: "default",
+        },
+
+        Spec: corev1.ServiceSpec{
+
+            Selector: labels,
+
+            Ports: []corev1.ServicePort{
+                {
+
+                    Protocol: corev1.ProtocolTCP,
+                    Port: 80,//internal to container
+                    TargetPort: intstr.FromInt(service.Port),
+
+                },
+            },
+
+            Type: corev1.ServiceTypeClusterIP, //default internal service type
+        },
     }
 }
