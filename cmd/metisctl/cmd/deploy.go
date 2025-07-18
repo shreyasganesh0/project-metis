@@ -22,7 +22,11 @@ import (
     "k8s.io/client-go/tools/clientcmd"
 )
 
-var deployCmd = &cobra.Command {
+var (
+
+clientset *clientk8s.Clientset
+
+deployCmd = &cobra.Command {
 
     Use: "deploy",
     Short: "Deploy the service defined by the metis.yaml",
@@ -53,29 +57,38 @@ var deployCmd = &cobra.Command {
         fmt.Println("--> Metis Service Manifest unmarshalled");
         fmt.Printf("Metis Service name: %s\n\n", metis_service.Name);
 
+        if err := SetClientset(); err != nil {
+
+            return fmt.Errorf("Error trying to create client set from config: %w\n", err)
+        }
+
         fmt.Println("--> Generating K8s Deployment\n");
 
         deployment := kubernetes.GenerateDeployment(&metis_service)
-        _, err_dep := yaml.Marshal(deployment)
-        if err_dep != nil {
-
-            return fmt.Errorf("Error converting deployment to YAML: %w\n", err_dep);
-        }
+        // _, err_dep := yaml.Marshal(deployment)
+        // if err_dep != nil {
+        //
+        //     return fmt.Errorf("Error converting deployment to YAML: %w\n", err_dep);
+        // }
 
         if err := CreateDeploymentResources(deployment); err != nil {
 
-            return fmt.Errorf("Error while trying to deploy to k8s: %w\n", err)
+            return fmt.Errorf("Error while trying to create deployment in k8s: %w\n", err)
         }
 
         fmt.Println("Deployment Generated\n");
         fmt.Println("--> Generating K8s Service\n");
 
         service := kubernetes.GenerateService(&metis_service)
-        _, err_serv := yaml.Marshal(service)
-        if err_serv != nil {
+        if err := CreateServiceResources(service); err != nil {
 
-            return fmt.Errorf("Error converting service to YAML: %w\n", err_serv);
+            return fmt.Errorf("Error while trying to create service in k8s: %w\n", err)
         }
+        // _, err_serv := yaml.Marshal(service)
+        // if err_serv != nil {
+        //
+        //     return fmt.Errorf("Error converting service to YAML: %w\n", err_serv);
+        // }
         fmt.Println("Service Generated\n");
 
         // fmt.Println("---")
@@ -88,13 +101,14 @@ var deployCmd = &cobra.Command {
         return nil;
     },
 }
+)
 
 func init() {
 
     rootCmd.AddCommand(deployCmd);
 }
 
-func CreateDeploymentResources(deployment *appsv1.Deployment) error{
+func SetClientset() error {
 
     var kubeconfig *string
     if home := homedir.HomeDir(); home != "" {
@@ -118,10 +132,32 @@ func CreateDeploymentResources(deployment *appsv1.Deployment) error{
         return err
     }
 
-    clientset, err := clientk8s.NewForConfig(config)
+    clientSet, err := clientk8s.NewForConfig(config)
     if err != nil {
         return err
     }
+
+    clientset = clientSet
+    return nil;
+}
+
+func CreateServiceResources(service *corev1.Service) error {
+
+    serviceClient := clientset.CoreV1().Services("default");
+
+    fmt.Println("Creating K8s service...")
+
+    result, err := serviceClient.Create(context.TODO(), service, metav1.CreateOptions{})
+    if err != nil {
+
+        return err
+    }
+    fmt.Printf("Created Service %q.\n", result.GetObjectMeta().GetName())
+
+    return nil;
+}
+
+func CreateDeploymentResources(deployment *appsv1.Deployment) error{
 
     deploymentsClient := clientset.AppsV1().Deployments(corev1.NamespaceDefault)
 
