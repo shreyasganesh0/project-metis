@@ -3,10 +3,23 @@ package cmd
 import (
     "fmt"
     "os"
+    "flag"
+    "context"
+    "path/filepath"
+    "bufio"
+
     "gopkg.in/yaml.v3"
     "github.com/spf13/cobra"
+
     "github.com/shreyasganesh0/project-metis/pkg/metis"
     "github.com/shreyasganesh0/project-metis/internal/kubernetes"
+
+    appsv1 "k8s.io/api/apps/v1"
+    corev1 "k8s.io/api/core/v1"
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    clientk8s "k8s.io/client-go/kubernetes"
+    "k8s.io/client-go/util/homedir"
+    "k8s.io/client-go/tools/clientcmd"
 )
 
 var deployCmd = &cobra.Command {
@@ -43,29 +56,34 @@ var deployCmd = &cobra.Command {
         fmt.Println("--> Generating K8s Deployment\n");
 
         deployment := kubernetes.GenerateDeployment(&metis_service)
-        dep_byts, err_dep := yaml.Marshal(deployment)
+        _, err_dep := yaml.Marshal(deployment)
         if err_dep != nil {
 
             return fmt.Errorf("Error converting deployment to YAML: %w\n", err_dep);
+        }
+
+        if err := CreateDeploymentResources(deployment); err != nil {
+
+            return fmt.Errorf("Error while trying to deploy to k8s: %w\n", err)
         }
 
         fmt.Println("Deployment Generated\n");
         fmt.Println("--> Generating K8s Service\n");
 
         service := kubernetes.GenerateService(&metis_service)
-        serv_byts, err_serv := yaml.Marshal(service)
+        _, err_serv := yaml.Marshal(service)
         if err_serv != nil {
 
             return fmt.Errorf("Error converting service to YAML: %w\n", err_serv);
         }
         fmt.Println("Service Generated\n");
 
-        fmt.Println("---")
-        fmt.Println(string(dep_byts));
-        fmt.Println("...")
-        fmt.Println("---")
-        fmt.Println(string(serv_byts));
-        fmt.Println("...")
+        // fmt.Println("---")
+        // fmt.Println(string(dep_byts));
+        // fmt.Println("...")
+        // fmt.Println("---")
+        // fmt.Println(string(serv_byts));
+        // fmt.Println("...")
 
         return nil;
     },
@@ -74,4 +92,47 @@ var deployCmd = &cobra.Command {
 func init() {
 
     rootCmd.AddCommand(deployCmd);
+}
+
+func CreateDeploymentResources(deployment *appsv1.Deployment) error{
+
+    var kubeconfig *string
+    if home := homedir.HomeDir(); home != "" {
+        kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "")
+    } else {
+
+        fmt.Println("Enter absolute path to .kube/config\n")
+        scanner := bufio.NewScanner(os.Stdin)
+        scanner.Scan()
+        if err := scanner.Err(); err != nil {
+
+            return err
+        }
+        abs_path := scanner.Text()
+        kubeconfig = flag.String("kubeconfig", "", abs_path);
+    }
+    flag.Parse()
+
+    config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+    if err != nil {
+        return err
+    }
+
+    clientset, err := clientk8s.NewForConfig(config)
+    if err != nil {
+        return err
+    }
+
+    deploymentsClient := clientset.AppsV1().Deployments(corev1.NamespaceDefault)
+
+    fmt.Println("Creating K8s deployment...")
+
+    result, err := deploymentsClient.Create(context.TODO(), deployment, metav1.CreateOptions{})
+    if err != nil {
+        return err
+    }
+    fmt.Printf("Created Deployment %q,\n", result.GetObjectMeta().GetName())
+
+    return nil;
+
 }
