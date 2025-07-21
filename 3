@@ -22,8 +22,8 @@ jobs:
             - name: Build Image
               uses: docker/build-push-action@v6
               with:
-                  context: ./test-apps/hello-world
-                  push: false
+                  context: .
+                  push: true
                   #use the commit hash as the tag for the build image
                   tags: hello-wordl:ci-${{ github.sha }}
 
