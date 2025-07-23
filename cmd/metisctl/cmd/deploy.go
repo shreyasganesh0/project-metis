@@ -10,6 +10,7 @@ import (
 
     "gopkg.in/yaml.v3"
     "github.com/spf13/cobra"
+    //"github.com/sfp13/pflag"
 
     "github.com/shreyasganesh0/project-metis/pkg/metis"
     "github.com/shreyasganesh0/project-metis/internal/kubernetes"
@@ -23,6 +24,8 @@ import (
 )
 
 var (
+
+image_tag *string
 
 clientset *clientk8s.Clientset
 
@@ -64,7 +67,7 @@ deployCmd = &cobra.Command {
 
         fmt.Println("--> Generating K8s Deployment\n");
 
-        deployment := kubernetes.GenerateDeployment(&metis_service)
+        deployment := kubernetes.GenerateDeployment(&metis_service, image_tag)
         // _, err_dep := yaml.Marshal(deployment)
         // if err_dep != nil {
         //
@@ -106,6 +109,8 @@ deployCmd = &cobra.Command {
 func init() {
 
     rootCmd.AddCommand(deployCmd);
+    image_tag = deployCmd.Flags().StringP("image", "i", "", "provide image tag to be deployed.")
+
 }
 
 func SetClientset() error {

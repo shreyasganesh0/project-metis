@@ -9,7 +9,7 @@ import (
 )
 
 
-func GenerateDeployment(service *metis.ServiceManifest) (*appsv1.Deployment) {
+func GenerateDeployment(service *metis.ServiceManifest, image_tag *string) (*appsv1.Deployment) {
 
     labels := map[string]string{
 
@@ -53,7 +53,7 @@ func GenerateDeployment(service *metis.ServiceManifest) (*appsv1.Deployment) {
                         {
 
                             Name: service.Name,
-                            Image: service.Name + ":latest",
+                            Image: resolveTag(service, image_tag),
                             Ports: []corev1.ContainerPort{
                                 {
 
@@ -116,4 +116,13 @@ func GenerateService(service *metis.ServiceManifest) (*corev1.Service) {
             Type: corev1.ServiceTypeClusterIP, //default internal service type
         },
     }
+}
+
+func resolveTag(service *metis.ServiceManifest, image_tag *string) string {
+
+    if *image_tag == "" {
+
+        return service.Name + ":latest"
+    }
+    return *image_tag
 }
