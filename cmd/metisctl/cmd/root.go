@@ -1,7 +1,6 @@
 package cmd
 
 import (
-    "fmt"
     "os"
     "time"
     "context"
@@ -50,31 +49,38 @@ var rootCmd = &cobra.Command {
 
     PersistentPreRun: func(cmd *cobra.Command, args []string) {
 
-		logging.Init();
 
         home_dir, err := os.UserHomeDir();
-        if err != nil {
-
-			log.Fatal().Err(err).Msg("Error while getting home directory");
-			return;
-        }
 
         viper.AddConfigPath(filepath.Join(home_dir, ".metis"))
         viper.SetConfigName("config")
         viper.SetConfigType("yaml")
         viper.SetEnvPrefix("METIS")
         //viper.AutomaticEnv() doesnt work reliably for nested keys like user.name need to explicitlly bind
-        if err_bind := viper.BindEnv("user.name", "METIS_USER_NAME"); err_bind != nil {
-			log.Error().Err(err_bind).Msg("Failed to bind key\n");
-			return;
-        }
+        err_bind_user := viper.BindEnv("user.name", "METIS_USER_NAME");
 
-        if err_read := viper.ReadInConfig(); err_read != nil {
+		err_bind_log := viper.BindEnv("log.level", "METIS_LOG_LEVEL");
+
+        err_read := viper.ReadInConfig();
+
+		logging.Init();
+
+        log.Info().Msgf("Using config file: %s", viper.ConfigFileUsed());
+
+		if err_read != nil {
 
 			log.Error().Err(err_read).Msg("Error while reading config file\n");
-            panic(fmt.Errorf("Error while reading config file: %w", err_read));
         }
-        log.Info().Msgf("Using config file: %s", viper.ConfigFileUsed());
+		if err_bind_user != nil {
+			log.Error().Err(err_bind_user).Msg("Failed to bind key\n");
+		}
+		if err_bind_log != nil {
+			log.Error().Err(err_bind_log).Msg("Failed to bind key\n");
+		}
+        if err != nil {
+
+			log.Fatal().Err(err).Msg("Error while getting home directory");
+        }
     },
 }
 
