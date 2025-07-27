@@ -8,10 +8,10 @@ import (
 
 func Init() {
 
-    output := zerolog.ConsoleWriter{Out: os.Stderr
+    output := zerolog.ConsoleWriter{Out: os.Stderr}
     log.Logger = log.Output(output)
 
     zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
-    log.Info().Msg("Logger Initialzied.");
+    log.Info().Msg("Logger Initialzied.\n");
 }

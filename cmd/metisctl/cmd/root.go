@@ -8,8 +8,13 @@ import (
     "syscall"
     "os/signal"
     "path/filepath"
+
     "github.com/spf13/cobra"
     "github.com/spf13/viper"
+
+    "github.com/rs/zerolog/log"
+
+	"github.com/shreyasganesh0/project-metis/internal/logging"
 )
 
 var rootCmd = &cobra.Command {
@@ -20,7 +25,7 @@ var rootCmd = &cobra.Command {
             in a reliable and efficient manner. It is an abstraction over Kubernetes
             that provides a developer-friendly approach to deploying pods.`,
     RunE: func(cmd *cobra.Command, args []string) error{
-        fmt.Println("Project Metis CLI (metisctl) is running. Press Ctrl+C to exit...");
+		log.Info().Msg("Project Metis CLI (metisctl) is running. Press Ctrl+C to exit...\n");
 
         ctx, cancel := context.WithCancel(context.Background());
 
@@ -35,20 +40,23 @@ var rootCmd = &cobra.Command {
 
         select {
         case <-ctx.Done():
-            fmt.Println("Recieved SIGINT. Cleaning up..");
+            log.Debug().Msg("Recieved SIGINT. Cleaning up..");
             time.Sleep(2 * time.Second);
         }
-        fmt.Println("Cleanup complete. Shutting down.");
+        log.Info().Msg("Cleanup complete. Shutting down.\n");
 
         return nil;
     },
 
     PersistentPreRun: func(cmd *cobra.Command, args []string) {
 
+		logging.Init();
+
         home_dir, err := os.UserHomeDir();
         if err != nil {
 
-            panic(fmt.Errorf("Error while getting home directory: %w", err));
+			log.Fatal().Err(err).Msg("Error while getting home directory");
+			return;
         }
 
         viper.AddConfigPath(filepath.Join(home_dir, ".metis"))
@@ -57,14 +65,16 @@ var rootCmd = &cobra.Command {
         viper.SetEnvPrefix("METIS")
         //viper.AutomaticEnv() doesnt work reliably for nested keys like user.name need to explicitlly bind
         if err_bind := viper.BindEnv("user.name", "METIS_USER_NAME"); err_bind != nil {
-            fmt.Printf("Failed to bind key %w", err);
+			log.Error().Err(err_bind).Msg("Failed to bind key\n");
+			return;
         }
 
         if err_read := viper.ReadInConfig(); err_read != nil {
 
+			log.Error().Err(err_read).Msg("Error while reading config file\n");
             panic(fmt.Errorf("Error while reading config file: %w", err_read));
         }
-        fmt.Println("Using config file:", viper.ConfigFileUsed());
+        log.Info().Msgf("Using config file: %s", viper.ConfigFileUsed());
     },
 }
 

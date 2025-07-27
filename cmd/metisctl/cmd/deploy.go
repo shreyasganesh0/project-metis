@@ -10,7 +10,6 @@ import (
 
     "gopkg.in/yaml.v3"
     "github.com/spf13/cobra"
-    //"github.com/sfp13/pflag"
 
     "github.com/shreyasganesh0/project-metis/pkg/metis"
     "github.com/shreyasganesh0/project-metis/internal/kubernetes"
@@ -21,6 +20,8 @@ import (
     clientk8s "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/util/homedir"
     "k8s.io/client-go/tools/clientcmd"
+
+    "github.com/rs/zerolog/log"
 )
 
 var (
@@ -40,32 +41,37 @@ deployCmd = &cobra.Command {
         _, err := kubernetes.NewClient()
         if err != nil {
 
+            log.Fatal().Err(err).Msg("Failed to setup k8s cluster Client");
             return fmt.Errorf("Failed to setup k8s cluster: %w\n", err);
         }
-        fmt.Println("Successfully connected to kubernetes cluster.")
+        log.Debug().Msg("Successfully connected to kubernetes cluster.\n")
 
         manifest_bytes, err := os.ReadFile("metis.yaml") //should be fine, the file isnt huge
         if err != nil {
 
+            log.Fatal().Err(err).Msg("Failed to read the manifest file\n");
             return fmt.Errorf("Couldnt read manifest file:%w",err);
         }
 
+
         var metis_service metis.ServiceManifest
-        fmt.Println("--> Unmarshalling Metis Service Manifest..\n");
+        log.Info().Msg("--> Unmarshalling Metis Service Manifest..\n");
 
         if err := yaml.Unmarshal(manifest_bytes, &metis_service); err != nil {
 
+            log.Error().Err(err).Msg("Couldnt unmarshal manifest bytes\n");
             return fmt.Errorf("Error unmarshalling file: %w", err);
         }
-        fmt.Println("--> Metis Service Manifest unmarshalled");
-        fmt.Printf("Metis Service name: %s\n\n", metis_service.Name);
+
+        log.Info().Str("serviceName", metis_service.Name).Int("port", metis_service.Port).Msg("--> Metis Service Manifest unmarshalled\n")
 
         if err := SetClientset(); err != nil {
 
+            log.Error().Err(err).Msg("Couldnt create k8s clients\n");
             return fmt.Errorf("Error trying to create client set from config: %w\n", err)
         }
 
-        fmt.Println("--> Generating K8s Deployment\n");
+        log.Debug().Msg("--> Generating K8s Deployment\n");
 
         deployment := kubernetes.GenerateDeployment(&metis_service, image_tag)
         // _, err_dep := yaml.Marshal(deployment)
@@ -76,30 +82,21 @@ deployCmd = &cobra.Command {
 
         if err := CreateDeploymentResources(deployment); err != nil {
 
+            log.Error().Err(err).Msg("Couldnt create deployment\n");
             return fmt.Errorf("Error while trying to create deployment in k8s: %w\n", err)
         }
 
-        fmt.Println("Deployment Generated\n");
-        fmt.Println("--> Generating K8s Service\n");
+        log.Info().Msg("Deployment Generated\n");
+        log.Info().Msg("--> Generating K8s Service\n");
 
         service := kubernetes.GenerateService(&metis_service)
         if err := CreateServiceResources(service); err != nil {
 
+            log.Error().Err(err).Msg("Couldnt create service\n");
             return fmt.Errorf("Error while trying to create service in k8s: %w\n", err)
         }
-        // _, err_serv := yaml.Marshal(service)
-        // if err_serv != nil {
-        //
-        //     return fmt.Errorf("Error converting service to YAML: %w\n", err_serv);
-        // }
-        fmt.Println("Service Generated\n");
+        log.Info().Msg("Service Generated\n");
 
-        // fmt.Println("---")
-        // fmt.Println(string(dep_byts));
-        // fmt.Println("...")
-        // fmt.Println("---")
-        // fmt.Println(string(serv_byts));
-        // fmt.Println("...")
 
         return nil;
     },
@@ -150,14 +147,14 @@ func CreateServiceResources(service *corev1.Service) error {
 
     serviceClient := clientset.CoreV1().Services("default");
 
-    fmt.Println("Creating K8s service...")
+    log.Info().Msg("Creating K8s service...")
 
     result, err := serviceClient.Create(context.TODO(), service, metav1.CreateOptions{})
     if err != nil {
 
         return err
     }
-    fmt.Printf("Created Service %q.\n", result.GetObjectMeta().GetName())
+    log.Info().Str("serviceName", result.GetObjectMeta().GetName()).Msg("Created Service\n")
 
     return nil;
 }
@@ -166,13 +163,13 @@ func CreateDeploymentResources(deployment *appsv1.Deployment) error{
 
     deploymentsClient := clientset.AppsV1().Deployments(corev1.NamespaceDefault)
 
-    fmt.Println("Creating K8s deployment...")
+    log.Info().Msg("Creating K8s deployment...")
 
     result, err := deploymentsClient.Create(context.TODO(), deployment, metav1.CreateOptions{})
     if err != nil {
         return err
     }
-    fmt.Printf("Created Deployment %q,\n", result.GetObjectMeta().GetName())
+    log.Info().Str("deploymentName", result.GetObjectMeta().GetName()).Msg("Created Deployment\n")
 
     return nil;
 
