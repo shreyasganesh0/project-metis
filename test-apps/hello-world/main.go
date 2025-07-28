@@ -5,6 +5,7 @@ import (
     "fmt"
     "net/http"
    "github.com/prometheus/client_golang/prometheus"
+   "github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var httpRequestsCounter prometheus.Counter
@@ -17,6 +18,8 @@ func main() {
         log.Printf("Request reieved from %s\n", r.RemoteAddr);
         fmt.Fprintf(w, "Updated Hit Hello World!\n")
     })
+
+    http.Handle("/metrics", promhttp.Handler());
 
     log.Fatal(http.ListenAndServe(":8080", nil));
 }
