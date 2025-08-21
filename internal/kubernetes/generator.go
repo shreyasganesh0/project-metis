@@ -97,6 +97,10 @@ func GenerateService(service *metis.ServiceManifest) (*corev1.Service) {
             Name: service.Name,
             Labels: labels,
             Namespace: "default",
+            Annotations: map[string]string {
+
+                "prometheus.io/scrape": "true",
+            },
         },
 
         Spec: corev1.ServiceSpec{
